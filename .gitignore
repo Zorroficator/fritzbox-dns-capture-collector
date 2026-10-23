@@ -1,0 +1,25 @@
+# OS / editor
+.DS_Store
+
+# Secrets
+.env
+capture.toml
+credentials
+*_credentials
+capture_credentials*
+*.key
+*.pem
+
+# Generated data
+*.db
+*.db-*
+*.log
+
+# Local notes
+handoffs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/

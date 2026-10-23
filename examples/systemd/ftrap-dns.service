@@ -1,0 +1,73 @@
+# Example systemd unit for ftrap_dns.py (system service, own unprivileged user).
+#
+# Setup (as root; adjust paths):
+#   useradd --system --no-create-home --shell /usr/sbin/nologin ftrap
+#   install -d -m 755 /opt/fritzbox-dns-capture-collector     # copy the repository files here
+#   install -d -m 750 -g ftrap /etc/ftrap                     # ConfigurationDirectory= reuses it
+#   install -m 640 -g ftrap capture.toml /etc/ftrap/capture.toml
+#   install -m 600 /dev/null /etc/ftrap/capture_credentials   # user on line 1, password on line 2
+#   ${EDITOR:-nano} /etc/ftrap/capture_credentials
+#   cp ftrap-dns.service /etc/systemd/system/ && systemctl daemon-reload
+#   systemctl enable --now ftrap-dns
+#
+# /etc/ftrap/capture.toml needs explicit paths (the service user has no home directory):
+#   db_path          = "/var/lib/ftrap/ftrap_dns.db"        # StateDirectory=ftrap
+#   out_dir          = "/var/lib/ftrap/out"
+#   credentials_file = "/run/credentials/ftrap-dns.service/capture_credentials"
+#
+# The credentials file is handed to the service by LoadCredential= (read-only copy owned by
+# the service user, mode 0400, only visible to the unit); the unit name in the path above
+# must match this file's name. The configuration does not expand $CREDENTIALS_DIRECTORY
+# or %d, so the fixed /run/credentials/<unit> path is used. As an alternative, set
+# FTRAP_CAPTURE_USER / FTRAP_CAPTURE_PASSWORD through an EnvironmentFile= (mode 600).
+#
+# To let a web server (another user) read the JSON files: add that group as
+# SupplementaryGroups= / use a shared group, set StateDirectoryMode=0750 and
+# [output] dir_mode = 0o750, file_mode = 0o640 in capture.toml (see the README).
+[Unit]
+Description=FRITZ!Box DNS capture collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ftrap
+Group=ftrap
+WorkingDirectory=/opt/fritzbox-dns-capture-collector
+ExecStart=/usr/bin/python3 /opt/fritzbox-dns-capture-collector/ftrap_dns.py --config /etc/ftrap/capture.toml
+# /var/lib/ftrap: database and JSON output, writable even with ProtectSystem=strict
+StateDirectory=ftrap
+StateDirectoryMode=0700
+# /etc/ftrap: configuration
+ConfigurationDirectory=ftrap
+ConfigurationDirectoryMode=0750
+LoadCredential=capture_credentials:/etc/ftrap/capture_credentials
+# SIGTERM stops the capture on the box and logs out cleanly.
+KillSignal=SIGTERM
+TimeoutStopSec=20
+Restart=on-failure
+RestartSec=30
+UMask=0077
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

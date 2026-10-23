@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Example LaunchAgent for ftrap_dns.py (runs as the logged-in user, no sudo).
+  Copy to ~/Library/LaunchAgents/, adjust the paths, then:
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/org.example.ftrap-dns.plist
+  Credentials: credentials file (mode 600) from the configuration; see config.example.toml.
+  On macOS, python3 may need "Local Network" access (System Settings > Privacy & Security).
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>org.example.ftrap-dns</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/python3</string>
+    <string>/path/to/fritzbox-dns-capture-collector/ftrap_dns.py</string>
+    <string>--config</string>
+    <string>/path/to/capture.toml</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+  <key>Umask</key>
+  <integer>63</integer>
+  <key>StandardErrorPath</key>
+  <string>/path/to/ftrap_dns.err.log</string>
+  <key>StandardOutPath</key>
+  <string>/path/to/ftrap_dns.out.log</string>
+</dict>
+</plist>

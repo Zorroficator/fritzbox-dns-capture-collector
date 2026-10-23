@@ -1,0 +1,89 @@
+# Example configuration for ftrap_dns.py. Every key is optional; the values
+# shown are the defaults unless stated otherwise.
+# Start: python3 ftrap_dns.py --config capture.toml
+
+# Base URL of the FRITZ!Box web interface.
+# box_url = "http://fritz.box"
+
+# https needs a certificate pin and/or a trusted certificate (no unverified
+# connections, no fallback to http). Get the pin with:
+#   openssl s_client -connect fritz.box:443 </dev/null 2>/dev/null \
+#     | openssl x509 -outform DER | openssl dgst -sha256
+# The pin is trusted on first use: determine it over a trustworthy (e.g. wired)
+# connection and compare it with the certificate shown in the box's web interface.
+# box_url = "https://fritz.box"
+# pin_sha256 = "<64 hex digits, colons allowed>"
+# ca_file = "~/.config/ftrap/fritzbox.pem"      # alternative or addition to the pin
+
+# Accept the old MD5 login of firmware older than FRITZ!OS 7.24. Off by default:
+# over plain http an attacker in the network could force the weaker login by
+# sending a challenge without "2$" (FRITZ!OS 7.24 and newer use PBKDF2).
+# allow_legacy_md5 = false
+
+# HTTP timeout in seconds for login and helper requests.
+# timeout_seconds = 10
+
+# Capture interface on the box (tested: "1-lan" on a FRITZ!Box 7690).
+# interface = "1-lan"
+
+# Credentials of the dedicated capture user. Lookup order:
+#   1. --password-stdin (password only; the user comes from FTRAP_CAPTURE_USER or "user" below)
+#   2. FTRAP_CAPTURE_USER + FTRAP_CAPTURE_PASSWORD in the environment
+#   3. credentials_file: user name on line 1, password on line 2 (or
+#      "username: ..." / "password: ..."); must be chmod 600 unless
+#      --allow-insecure-credentials is given.
+# user = ""
+# credentials_file = "~/.config/ftrap/capture_credentials"
+# systemd with LoadCredential= (examples/systemd): "/run/credentials/ftrap-dns.service/capture_credentials"
+
+# Where the JSON files for the dashboard are written and where the SQLite
+# database lives. Keep the database out of any web-served folder.
+# Missing directories are created with mode 700 (out_dir: [output] dir_mode);
+# existing directories are never changed (a warning is logged if group/others
+# have more access than the configured mode).
+# out_dir = "~/.local/share/ftrap/out"
+# db_path = "~/.local/share/ftrap/ftrap_dns.db"
+# systemd with StateDirectory=ftrap: "/var/lib/ftrap/out" and "/var/lib/ftrap/ftrap_dns.db"
+
+# Time zone for calendar days and timestamps (IANA name, "UTC" works without
+# a time zone database). Empty = local system time zone.
+# timezone = ""
+
+# Log file (rotating, 1 MB x 3). Empty = log to stderr.
+# log_file = ""
+
+[capture]
+# idle_timeout_s = 150      # no data for this long -> reconnect
+# connect_timeout_s = 30    # connect / response header
+
+[limits]
+# client_per_min = 1200     # stored queries per device and minute, the rest is only counted
+# domains_per_day = 20000   # distinct new domains per day, the rest goes to "(other)"
+# min_free_mb = 1024        # below this free disk space nothing is written to the database
+# events_per_min = 6000     # stored queries per minute in total, the rest is only counted
+# clients_per_day = 500     # distinct devices per day in the daily totals, new ones go to "(other)";
+#                           # also the maximum of distinct devices tracked per minute for client_per_min
+#                           # (further ones share one counter) and of devices ranked for the 24 h view
+
+[output]
+# Permissions of the JSON files and of out_dir (only if it has to be created).
+# Octal integer (0o640) or string ("0640"). The database files are always 600.
+# To let a web server running as another user read the files, use a shared
+# group and e.g. file_mode = 0o640, dir_mode = 0o750 (see README).
+# dir_mode = 0o700
+# file_mode = 0o600
+
+[retention]
+# events_hours = 24         # individual queries
+# daily_days = 30           # daily totals
+
+[hosts]
+# Device names from the box's host list (TR-064, same credentials, user needs the
+# TR-064 right). Off by default: without it, devices are shown by IP/MAC.
+# enabled = false
+# refresh_seconds = 600
+
+[aliases]
+# Your own labels, keyed by MAC or IPv4 address. They win over host list names.
+# "02:00:00:00:00:01" = "Living room TV"
+# "192.0.2.10" = "Printer"
